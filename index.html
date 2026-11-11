@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#cfe3ff">
+<title>บุคลากร OPD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@500;600;700&family=Prompt:wght@400;500;600&display=swap" rel="stylesheet">
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  :root {
+    --sky:#e8f2ff; --sky2:#cfe3ff; --blue:#6ea8f0; --blue-d:#3f7fd6;
+    --blush:#ffeef4; --pink:#ffc7da; --pink-d:#e8799f;
+    --ink:#3b4660; --muted:#8a94ad; --line:#e6ebf5; --card:#ffffff;
+    --ok:#3dbb8a; --ok-bg:#e3f7ee; --bad:#e2637d; --bad-bg:#ffe8ed; --warn:#c27a22; --warn-bg:#fff1df;
+    --r:20px; --shadow:0 6px 20px rgba(110,140,200,.14);
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; }
+  body { font:16px/1.5 "Prompt", system-ui, sans-serif; color:var(--ink);
+    background:linear-gradient(180deg, var(--sky) 0%, #f6f9ff 40%, var(--blush) 100%) fixed; min-height:100vh; }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  header { position:sticky; top:0; z-index:5; padding:14px 16px 12px;
+    background:linear-gradient(120deg, rgba(207,227,255,.92), rgba(255,215,229,.92));
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,.7); }
+  .top { max-width:560px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .hello { font-size:13px; color:var(--muted); line-height:1.2; }
+  .hello b { display:block; font-family:"Mali", sans-serif; font-size:19px; color:var(--ink); }
+  .role { font-size:12px; background:#fff; color:var(--pink-d); border-radius:999px; padding:4px 10px; white-space:nowrap; }
+  main { max-width:560px; margin:0 auto; padding:16px 16px 110px; }
+  h2 { font-family:"Mali", sans-serif; font-size:22px; margin:6px 0 10px; }
+  h3 { font-family:"Mali", sans-serif; font-size:17px; margin:0; }
+  .muted { color:var(--muted); } .sm { font-size:13px; }
+  .card { background:var(--card); border-radius:var(--r); padding:16px; box-shadow:var(--shadow); margin-bottom:12px; }
+  .back { border:none; background:rgba(255,255,255,.75); border-radius:999px; padding:8px 14px; font-size:14px; margin-bottom:12px; }
+  .btn { width:100%; border:none; border-radius:16px; padding:15px; font-size:16px; font-weight:600; cursor:pointer; }
+  .btn:disabled { opacity:.55; }
+  .btn-main { background:linear-gradient(120deg, var(--blue) 0%, #a59cf0 60%, var(--pink-d) 100%); color:#fff; box-shadow:0 8px 20px rgba(130,130,230,.3); }
+  .btn-soft { background:var(--sky); color:var(--blue-d); }
+  .btn-line { background:#fff; color:var(--bad); border:1.5px solid var(--bad-bg); }
+  .stack { display:grid; gap:10px; margin-top:16px; }
+  .field { width:100%; border:1.5px solid var(--line); background:#fff; border-radius:14px; padding:11px 13px; outline:none; }
+  .field:focus { border-color:var(--blue); }
+  textarea.field { min-height:70px; resize:vertical; }
+  label.lb { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  #toast { position:fixed; left:16px; right:16px; top:calc(12px + env(safe-area-inset-top)); z-index:30; margin:0 auto; max-width:520px;
+    background:var(--ink); color:#fff; padding:13px 16px; border-radius:16px; text-align:center; font-size:14px;
+    box-shadow:0 10px 24px rgba(40,50,80,.25); opacity:0; transform:translateY(-16px); transition:.2s; pointer-events:none; }
+  #toast.show { opacity:1; transform:none; } #toast.bad { background:var(--bad); }
+  .loading { text-align:center; padding:60px 0; color:var(--muted); }
+  .loading .blob { width:54px; height:54px; margin:0 auto 12px; border-radius:50%; background:linear-gradient(135deg, var(--sky2), var(--pink)); animation:pulse 1.2s infinite ease-in-out; }
+  @keyframes pulse { 50% { transform:scale(.8); opacity:.6; } }
+
+  .hero { display:flex; gap:14px; align-items:center; }
+  .avatar { width:62px; height:62px; border-radius:22px; flex:none; display:grid; place-items:center; font-family:"Mali", sans-serif; font-size:26px; color:#fff;
+    background:linear-gradient(135deg, var(--blue), var(--pink-d)); }
+  .hero b { font-family:"Mali", sans-serif; font-size:20px; display:block; line-height:1.25; }
+  .prog { height:8px; background:var(--sky); border-radius:99px; overflow:hidden; margin:12px 0 4px; }
+  .prog i { display:block; height:100%; background:linear-gradient(90deg, var(--blue), var(--pink-d)); border-radius:99px; }
+  .sec-h { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .edit { border:none; background:var(--blush); color:var(--pink-d); border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; }
+  .kv { display:grid; grid-template-columns:42% 58%; gap:2px 8px; font-size:14px; padding:6px 0; border-bottom:1px dashed var(--line); }
+  .kv:last-child { border-bottom:none; }
+  .kv span { color:var(--muted); }
+  .kv .empty { color:var(--warn); font-size:13px; }
+  .lock { font-size:12px; color:var(--pink-d); background:var(--blush); border-radius:12px; padding:6px 10px; margin:-2px 0 8px; }
+  .item { display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-bottom:1px dashed var(--line); font-size:14px; }
+  .item:last-child { border-bottom:none; }
+  .item .grow { flex:1; }
+  .mini { border:none; background:var(--sky); color:var(--blue-d); border-radius:10px; padding:5px 10px; font-size:12px; }
+  .tile { width:100%; border:none; background:#fff; border-radius:18px; padding:14px; display:flex; align-items:center; gap:12px; text-align:left; box-shadow:var(--shadow); margin-bottom:10px; }
+  .tile .ic { width:44px; height:44px; border-radius:15px; display:grid; place-items:center; font-size:22px; flex:none; background:var(--sky); }
+  .tile b { display:block; }
+  .pill { display:inline-block; font-size:11px; border-radius:999px; padding:2px 8px; margin-left:4px; }
+  .p-ok { background:var(--ok-bg); color:var(--ok); } .p-bad { background:var(--bad-bg); color:var(--bad); } .p-warn { background:var(--warn-bg); color:var(--warn); } .p-mute { background:var(--line); color:var(--muted); }
+  .person { width:100%; border:none; background:#fff; border-radius:16px; padding:12px 14px; display:flex; gap:12px; align-items:center; text-align:left; box-shadow:var(--shadow); margin-bottom:8px; }
+  .person .av { width:40px; height:40px; border-radius:14px; display:grid; place-items:center; font-family:"Mali", sans-serif; color:#fff; background:linear-gradient(135deg, var(--sky2), var(--pink)); flex:none; }
+  .person .grow { flex:1; min-width:0; }
+  .person a { text-decoration:none; font-size:20px; }
+  .pdpa { font-size:13px; background:var(--sky); border-radius:14px; padding:12px 14px; line-height:1.65; }
+  .pdpa ul { margin:6px 0; padding-left:18px; }
+  .check { display:flex; gap:10px; align-items:flex-start; margin-top:12px; font-size:14px; }
+  .check input { width:20px; height:20px; margin-top:2px; flex:none; }
+  .savebar { position:fixed; left:16px; right:16px; bottom:calc(14px + env(safe-area-inset-bottom)); z-index:15; max-width:520px; margin:0 auto; }
+  .seg { display:flex; background:#fff; border-radius:14px; padding:4px; box-shadow:var(--shadow); margin-bottom:12px; }
+  .seg button { flex:1; border:none; background:none; border-radius:11px; padding:8px; font-size:14px; color:var(--muted); }
+  .seg button.on { background:var(--sky); color:var(--blue-d); font-weight:600; }
+</style>
+</head>
+<body>
+<header><div class="top">
+  <div class="hello" id="hello"><span>บุคลากร · OPD อายุรกรรม</span><b>สวัสดีค่ะ 🌷</b></div>
+  <span class="role" id="role" style="display:none"></span>
+</div></header>
+<main id="app"><div class="loading"><div class="blob"></div>กำลังเปิดระบบ...</div></main>
+<div id="toast"></div>
+
+<script>
+const CONFIG = {
+  // LIFF ของระบบบุคลากร (สร้างใน LINE Login channel "OPD Staff Profile")
+  LIFF_ID: '2012553231-BaXUz9Wa',
+  // URL เว็บแอปของ Apps Script "ระบบบุคลากร OPD (หลังบ้าน)" (ลงท้ายด้วย /exec)
+  API_URL: 'https://script.google.com/macros/s/AKfycbx8gGIIHYgOnFwZ4fMMKfQRQfyez-ZWjcWKhmIMShQqze8J_ZOykcI_nJ1zN0zS2nelTA/exec'
+};
+const S = { idToken: '', me: null, dir: null };
+const $app = document.getElementById('app');
+
+// ---------- ตัวเลือกและป้ายชื่อ ----------
+const OPT = {
+  pre: ['นาง', 'นางสาว', 'นาย'],
+  pos: ['พยาบาลวิชาชีพ', 'พยาบาลเทคนิค', 'ผู้ช่วยพยาบาล', 'พนักงานช่วยเหลือคนไข้', 'เจ้าหน้าที่ธุรการ'],
+  lvl: ['', 'ปฏิบัติการ', 'ชำนาญการ', 'ชำนาญการพิเศษ', 'ปฏิบัติงาน', 'ชำนาญงาน', 'อาวุโส'],
+  emp: ['', 'ข้าราชการ', 'พนักงานราชการ', 'พกส.', 'ลูกจ้างประจำ', 'ลูกจ้างชั่วคราว'],
+  marital: ['', 'โสด', 'สมรส', 'หย่า', 'หม้าย'],
+  status: ['ปฏิบัติงาน', 'ย้าย', 'ลาออก', 'เกษียณ'],
+  level: ['ม.ต้น', 'ม.ปลาย', 'ปวช.', 'ปวส.', 'พยาบาลเทคนิค', 'หลักสูตรผู้ช่วยพยาบาล', 'ปริญญาตรี', 'ปริญญาโท', 'ปริญญาเอก', 'เฉพาะทาง', 'วุฒิบัตร', 'อื่น ๆ']
+};
+const LABEL = {
+  pre: 'คำนำหน้า', fn: 'ชื่อ', ln: 'นามสกุล', nick: 'ชื่อเล่น', pos: 'ตำแหน่ง', lvl: 'ระดับ', emp: 'ประเภทการจ้าง',
+  posno: 'เลขตำแหน่ง', empcode: 'รหัสประจำตัว', dob: 'วันเกิด', marital: 'สถานภาพ', phone: 'เบอร์โทร', email: 'อีเมล',
+  start: 'วันเริ่มงาน', start_at: 'เริ่มงานที่ / ตำแหน่ง', appoint: 'วันบรรจุ', unit_date: 'วันเข้าหน่วย', status: 'สถานะ',
+  nid: 'เลขบัตรประชาชน', addr_reg: 'ที่อยู่ตามทะเบียนบ้าน', addr_cur: 'ที่อยู่ปัจจุบัน', disease: 'โรคประจำตัว',
+  lic_type: 'ประเภทใบอนุญาต', lic_no: 'เลขที่ใบอนุญาต', member: 'เลขสมาชิกสภา', lic_issue: 'วันออกใบอนุญาต', lic_exp: 'วันหมดอายุ',
+  level: 'ระดับ', year: 'ปีที่จบ (พ.ศ.)', course: 'หลักสูตร / สาขา', school: 'สถานศึกษา', from: 'ตั้งแต่', to: 'ถึง', place: 'หน่วยงาน / ตำแหน่ง'
+};
+const DATE_KEYS = ['dob', 'start', 'appoint', 'unit_date', 'lic_issue', 'lic_exp', 'from', 'to'];
+const LONG_KEYS = ['addr_reg', 'addr_cur', 'disease', 'start_at'];
+const SECTIONS = {
+  basic: { title: '👤 ข้อมูลทั่วไป', keys: ['pre', 'fn', 'ln', 'nick', 'dob', 'marital', 'phone', 'email'] },
+  work: { title: '🏥 ข้อมูลการทำงาน', sec: 'basic', keys: ['pos', 'lvl', 'emp', 'posno', 'empcode', 'start', 'start_at', 'appoint', 'unit_date', 'status'] },
+  license: { title: '🪪 ใบอนุญาตประกอบวิชาชีพ', keys: ['lic_type', 'lic_no', 'member', 'lic_issue', 'lic_exp'] },
+  private: { title: '🔒 ข้อมูลส่วนตัว', keys: ['nid', 'addr_reg', 'addr_cur', 'disease'] }
+};
+
+// ---------- ตัวช่วย ----------
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v === false || v == null) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'html') el.innerHTML = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  kids.flat(Infinity).forEach(c => { if (c != null && c !== false) el.append(c.nodeType ? c : document.createTextNode(String(c))); });
+  return el;
+}
+function render(...nodes) { $app.replaceChildren(...nodes.flat(Infinity).filter(Boolean)); window.scrollTo(0, 0); }
+function loading(msg) { render(h('div', { class: 'loading' }, h('div', { class: 'blob' }), msg || 'กำลังโหลด...')); }
+function toast(msg, bad, ms) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show' + (bad ? ' bad' : '');
+  clearTimeout(toast.t); toast.t = setTimeout(() => { t.className = ''; }, ms || 2600);
+}
+function back(fn, label) { return h('button', { class: 'back', onclick: fn || showHome }, '‹ ' + (label || 'กลับ')); }
+function act(label, cls, fn) {
+  const b = h('button', { class: 'btn ' + (cls || 'btn-main') }, label);
+  b.addEventListener('click', async () => {
+    b.disabled = true;
+    try { await fn(); } catch (e) { toast(e.message, true, 4000); } finally { b.disabled = false; }
+  });
+  return b;
+}
+const blank = v => v == null || String(v).trim() === '';
+async function api(action, data) {
+  const res = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ action, idToken: S.idToken }, data || {})) });
+  const j = await res.json();
+  if (!j.ok) throw new Error(j.error);
+  return j.data;
+}
+// วันที่: เก็บเป็น วว/ดด/ปปปป (พ.ศ.) · input date ใช้ ค.ศ.
+function be2iso(s) { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s || ''); return m ? (m[3] - 543) + '-' + m[2] + '-' + m[1] : ''; }
+function iso2be(s) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? m[3] + '/' + m[2] + '/' + (Number(m[1]) + 543) : ''; }
+function beDate(s) { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s || ''); return m ? new Date(m[3] - 543, m[2] - 1, m[1]) : null; }
+function thDate(s) { const d = beDate(s); return d ? d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : (s || ''); }
+function span(s) {
+  const d = beDate(s); if (!d) return '';
+  const n = new Date(); let y = n.getFullYear() - d.getFullYear(), m = n.getMonth() - d.getMonth();
+  if (n.getDate() < d.getDate()) m--; if (m < 0) { y--; m += 12; }
+  return y + ' ปี' + (m ? ' ' + m + ' เดือน' : '');
+}
+function daysTo(s) { const d = beDate(s); return d ? Math.round((d - new Date()) / 864e5) : null; }
+function maskNid(n) { const d = String(n || '').replace(/\D/g, ''); return d.length === 13 ? 'x-xxxx-xxxxx-' + d.slice(9, 11) + '-' + d[12] : ''; }
+function fmtNid(n) { const d = String(n || '').replace(/\D/g, ''); return d.length === 13 ? d[0] + '-' + d.slice(1, 5) + '-' + d.slice(5, 10) + '-' + d.slice(10, 12) + '-' + d[12] : n; }
+function initial(name) { return (name || '?').trim().charAt(0); }
+function showVal(k, v) {
+  if (blank(v)) return h('span', { class: 'empty' }, 'ยังไม่ได้กรอก');
+  if (DATE_KEYS.includes(k)) {
+    let extra = '';
+    if (k === 'dob') extra = ' (อายุ ' + span(v) + ')';
+    if (k === 'appoint' || k === 'unit_date') extra = ' (' + span(v) + ')';
+    if (k === 'lic_exp') { const d = daysTo(v); extra = d < 0 ? ' ⚠️ หมดอายุแล้ว' : d < 180 ? ' ⚠️ เหลือ ' + d + ' วัน' : ''; }
+    return thDate(v) + extra;
+  }
+  if (k === 'nid') return fmtNid(v);
+  if (k === 'phone') return h('a', { href: 'tel:' + String(v).replace(/[^\d+]/g, '') }, v);
+  return v;
+}
+
+// ---------- เริ่มต้น ----------
+async function main() {
+  try {
+    if (/PASTE_/.test(CONFIG.API_URL + CONFIG.LIFF_ID)) throw new Error('ยังไม่ได้ใส่ LIFF_ID หรือ API_URL ในไฟล์ index.html');
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+    S.idToken = liff.getIDToken();
+    const d = await api('init');
+    if (!d.me) return showRegister(d);
+    start(d);
+  } catch (e) {
+    render(h('div', { class: 'card', style: 'text-align:center' },
+      h('div', { style: 'font-size:42px' }, '😿'), h('h2', {}, 'เปิดระบบไม่สำเร็จ'),
+      h('p', { class: 'muted' }, e.message), h('p', { class: 'sm muted' }, 'ลองปิดหน้านี้แล้วเปิดใหม่จากเมนูใน LINE')));
+  }
+}
+function start(d) {
+  S.me = d.me;
+  document.getElementById('hello').replaceChildren(h('span', {}, 'บุคลากร · OPD อายุรกรรม'), h('b', {}, 'สวัสดี ' + (S.me.nick || S.me.name.split(' ')[0]) + ' 🌷'));
+  const r = document.getElementById('role'); r.textContent = S.me.role; r.style.display = S.me.role === 'เจ้าหน้าที่' ? 'none' : '';
+  showHome();
+}
+
+// ---------- ลงทะเบียน ----------
+async function showRegister(d) {
+  loading('กำลังโหลดรายชื่อ...');
+  const r = await api('unclaimed');
+  const sel = h('select', { class: 'field' }, h('option', { value: '' }, '— เลือกชื่อของคุณ —'), r.list.map(x => h('option', { value: x.id }, x.name)));
+  const secret = h('input', { class: 'field', type: 'tel', inputmode: 'numeric', maxlength: '6', placeholder: 'เช่น 6851', autocomplete: 'off' });
+  const ok = h('input', { type: 'checkbox' });
+  render(
+    h('div', { class: 'card', style: 'text-align:center' },
+      h('div', { style: 'font-size:46px' }, '🪪'), h('h2', {}, 'ลงทะเบียนครั้งแรก'),
+      h('p', { class: 'muted sm', style: 'margin:0' }, 'ทำครั้งเดียว ครั้งต่อไประบบจำคุณได้เลย · บัญชี LINE: ' + (d.lineName || '-'))),
+    h('div', { class: 'card' },
+      h('label', { class: 'lb' }, '1. ชื่อของคุณ'), sel,
+      h('label', { class: 'lb' }, '2. เลขบัตรประชาชน 4 ตัวท้าย'), secret,
+      h('div', { class: 'sm muted', style: 'margin-top:6px' }, 'ถ้ายังไม่เคยให้เลขบัตรกับหน่วย ให้ใส่ "รหัสสำรอง" ที่ได้จากหัวหน้าหรือผู้ดูแลระบบแทน'),
+      h('label', { class: 'lb', style: 'margin-top:16px' }, '3. การเก็บและใช้ข้อมูลส่วนบุคคล'),
+      h('div', { class: 'pdpa' },
+        h('b', {}, 'หน่วยงานเก็บข้อมูลของคุณเพื่อ'),
+        h('ul', {}, h('li', {}, 'บริหารงานบุคคลในหน่วย และติดต่อคุณเมื่อจำเป็น'), h('li', {}, 'ติดตามการอบรม หน่วยคะแนน CNEU และวันหมดอายุใบอนุญาต'),
+          h('li', {}, 'เป็นรายชื่อกลางให้ระบบอื่นของหน่วย (พัสดุ ส่งยอด ตารางเวร) — ระบบอื่นเห็นแค่ชื่อ ชื่อเล่น และตำแหน่ง')),
+        h('b', {}, 'ใครเห็นอะไร'),
+        h('ul', {}, h('li', {}, 'เพื่อนร่วมงาน: ชื่อ ชื่อเล่น เบอร์โทร'), h('li', {}, 'เลขบัตรประชาชน: คุณ หัวหน้า ธุรการ และผู้ดูแลระบบ'),
+          h('li', {}, 'ที่อยู่และโรคประจำตัว: คุณ หัวหน้า และผู้ดูแลระบบเท่านั้น (โรคประจำตัวไม่บังคับกรอก)')),
+        'ข้อมูลเก็บใน Google Sheet ของบัญชีหน่วยงาน ไม่แชร์ให้ผู้อื่น ทุกการแก้ไขมีบันทึกไว้ คุณขอแก้ไขหรือลบข้อมูลได้ที่หัวหน้า'),
+      h('label', { class: 'check' }, ok, h('span', {}, 'ฉันอ่านแล้ว และยินยอมให้เก็บและใช้ข้อมูลตามนี้')),
+      h('div', { class: 'stack' }, act('ลงทะเบียน', 'btn-main', async () => {
+        if (!sel.value) throw new Error('กรุณาเลือกชื่อ');
+        if (!/^\d{4,6}$/.test(secret.value.trim())) throw new Error('กรุณาใส่เลขบัตร 4 ตัวท้าย');
+        if (!ok.checked) throw new Error('กรุณากดยอมรับการเก็บข้อมูลก่อน');
+        const res = await api('register', { sid: sel.value, secret: secret.value.trim(), consent: true });
+        toast('ลงทะเบียนเรียบร้อย 🎉 ตรวจข้อมูลของคุณได้เลย');
+        start(res);
+      })),
+      h('p', { class: 'sm muted', style: 'text-align:center' }, r.list.length ? '' : 'ไม่มีชื่อว่าง — แจ้งหัวหน้าหรือคุณมาลีให้เพิ่มชื่อก่อน'))
+  );
+}
+
+// ---------- หน้าแรก ----------
+async function showHome() {
+  loading();
+  const p = await api('profile');
+  S.mine = p;
+  const tiles = [];
+  tiles.push(h('button', { class: 'tile', onclick: () => showDirectory() },
+    h('div', { class: 'ic' }, '📇'), h('div', {}, h('b', {}, S.me.canSeeAll ? 'รายชื่อบุคลากรทั้งหมด' : 'สมุดโทรศัพท์หน่วย'),
+      h('span', { class: 'sm muted' }, S.me.canSeeAll ? 'ดูข้อมูล ตรวจความครบ ใครลงทะเบียนแล้ว' : 'ชื่อ ชื่อเล่น เบอร์โทรเพื่อนร่วมงาน'))));
+  if (S.me.canAdd) tiles.push(h('button', { class: 'tile', onclick: showAdd },
+    h('div', { class: 'ic', style: 'background:var(--blush)' }, '➕'), h('div', {}, h('b', {}, 'เพิ่มบุคลากรใหม่'), h('span', { class: 'sm muted' }, 'คนที่ย้ายเข้ามาใหม่ ให้เขาลงทะเบียนต่อเอง'))));
+  render(profileView(p, true), h('div', { style: 'margin-top:18px' }, tiles));
+}
+
+// ---------- แสดงประวัติ ----------
+function completeness(p) {
+  const need = ['fn', 'ln', 'dob', 'phone', 'emp', 'start', 'unit_date'].map(k => p.basic[k]);
+  need.push(p.private && p.private.nid);
+  if (p.needLicense) need.push(p.license && p.license.lic_no, p.license && p.license.lic_exp);
+  need.push(p.edu && p.edu.length ? 'x' : '');
+  return Math.round(100 * need.filter(v => !blank(v)).length / need.length);
+}
+function profileView(p, mine) {
+  const b = p.basic, name = (b.pre || '') + b.fn + ' ' + b.ln;
+  const self = p.basic.id === S.me.id;
+  if (p.level === 'basic') {
+    return h('div', { class: 'card' }, h('div', { class: 'hero' }, h('div', { class: 'avatar' }, initial(b.fn)),
+      h('div', {}, h('b', {}, name), h('span', { class: 'muted' }, b.nick ? 'ชื่อเล่น ' + b.nick : ''))),
+      h('div', { class: 'kv', style: 'margin-top:12px' }, h('span', {}, 'เบอร์โทร'), h('div', {}, showVal('phone', b.phone))));
+  }
+  const pct = completeness(p);
+  const out = [h('div', { class: 'card' },
+    h('div', { class: 'hero' }, h('div', { class: 'avatar' }, initial(b.fn)),
+      h('div', {}, h('b', {}, name), h('span', { class: 'muted sm' }, [b.nick && 'ชื่อเล่น ' + b.nick, b.pos, b.lvl].filter(Boolean).join(' · ')),
+        !self && h('div', {}, h('span', { class: 'pill ' + (p.registered ? 'p-ok' : 'p-mute') }, p.registered ? 'ลงทะเบียน LINE แล้ว' : 'ยังไม่ลงทะเบียน'),
+          p.role !== 'เจ้าหน้าที่' && h('span', { class: 'pill p-warn' }, p.role)))),
+    h('div', { class: 'prog' }, h('i', { style: 'width:' + pct + '%' })),
+    h('div', { class: 'sm muted' }, 'ข้อมูลครบ ' + pct + '%' + (pct < 100 && mine ? ' — ช่วยเติมช่องที่ยังว่างด้วยนะคะ' : '')))];
+
+  for (const [key, sec] of Object.entries(SECTIONS)) {
+    if (key === 'license' && !p.needLicense && !p.license) continue;
+    let data = key === 'private' ? p.private : key === 'license' ? (p.license || {}) : p.basic;
+    let keys = sec.keys;
+    if (key === 'private' && p.level === 'clerk') keys = ['nid'];
+    if (!data) continue;
+    const canEdit = (p.edit && p.edit[sec.sec || key] || []).some(k => sec.keys.includes(k));
+    out.push(h('div', { class: 'card' },
+      h('div', { class: 'sec-h' }, h('h3', {}, sec.title), canEdit && h('button', { class: 'edit', onclick: () => showEdit(p, key) }, 'แก้ไข')),
+      key === 'private' && h('div', { class: 'lock' }, p.level === 'clerk' ? 'คุณเห็นเฉพาะเลขบัตร (ที่อยู่/โรคประจำตัวเห็นเฉพาะเจ้าตัว หัวหน้า ผู้ดูแลระบบ)' : 'ส่วนนี้เห็นเฉพาะเจ้าตัว หัวหน้า และผู้ดูแลระบบ (เลขบัตร: ธุรการเห็นด้วย)'),
+      key === 'license' && p.needLicense && blank(data.lic_exp) && h('div', { class: 'lock', style: 'background:var(--warn-bg);color:var(--warn)' }, 'ใส่วันหมดอายุใบอนุญาต เพื่อให้ระบบนับ CNEU ในรอบใบอนุญาตได้'),
+      keys.map(k => h('div', { class: 'kv' }, h('span', {}, LABEL[k]), h('div', {}, showVal(k, data[k]))))));
+  }
+  out.push(listCard(p, 'edu', '🎓 ประวัติการศึกษา', r => [h('b', {}, r.level + (r.year ? ' · ' + r.year : '')), h('div', { class: 'sm muted' }, [r.course, r.school].filter(Boolean).join(' · '))]));
+  out.push(listCard(p, 'work', '🗂️ ประวัติการทำงาน', r => [h('b', {}, r.place || '-'), h('div', { class: 'sm muted' }, (r.from ? thDate(r.from) : '?') + ' – ' + (r.to ? thDate(r.to) : 'ปัจจุบัน'))]));
+  if (!mine && S.me.isBoss && p.registered) out.push(h('div', { class: 'stack' }, act('ยกเลิกการผูก LINE (ให้ลงทะเบียนใหม่)', 'btn-line', async () => {
+    if (!confirm('ยกเลิกการผูก LINE ของ ' + name + ' ?\nใช้เมื่อเปลี่ยนเครื่อง/บัญชี LINE หรือมีคนลงทะเบียนผิดชื่อ')) return;
+    await api('resetLine', { sid: b.id }); toast('ยกเลิกแล้ว ให้เจ้าตัวลงทะเบียนใหม่'); showPerson(b.id);
+  })));
+  return out;
+}
+function listCard(p, kind, title, line) {
+  const rows = p[kind] || [];
+  const can = p.edit && p.edit.rows;
+  return h('div', { class: 'card' },
+    h('div', { class: 'sec-h' }, h('h3', {}, title), can && h('button', { class: 'edit', onclick: () => showRow(p, kind, null) }, '+ เพิ่ม')),
+    rows.length ? rows.map(r => h('div', { class: 'item' }, h('div', { class: 'grow' }, line(r)),
+      can && h('button', { class: 'mini', onclick: () => showRow(p, kind, r) }, 'แก้')))
+      : h('div', { class: 'sm empty muted' }, 'ยังไม่มีข้อมูล'));
+}
+
+// ---------- แก้ไข ----------
+function input(k, v) {
+  if (OPT[k]) {
+    const opts = OPT[k].includes(v) || blank(v) ? OPT[k] : OPT[k].concat(v);
+    return h('select', { class: 'field', 'data-k': k }, opts.map(o => h('option', { value: o, selected: o === v }, o || '— ไม่ระบุ —')));
+  }
+  if (DATE_KEYS.includes(k)) return h('input', { class: 'field', type: 'date', 'data-k': k, value: be2iso(v) });
+  if (LONG_KEYS.includes(k)) { const t = h('textarea', { class: 'field', 'data-k': k }); t.value = v || ''; return t; }
+  const attrs = { class: 'field', 'data-k': k, value: v || '' };
+  if (k === 'phone') Object.assign(attrs, { type: 'tel', placeholder: '0xx-xxx-xxxx' });
+  if (k === 'email') attrs.type = 'email';
+  if (k === 'nid') Object.assign(attrs, { type: 'tel', inputmode: 'numeric', maxlength: '17', placeholder: '13 หลัก' });
+  if (k === 'year') Object.assign(attrs, { type: 'tel', inputmode: 'numeric', maxlength: '4', placeholder: 'เช่น 2555' });
+  return h('input', attrs);
+}
+function collect(box) {
+  const v = {};
+  box.querySelectorAll('[data-k]').forEach(el => { const k = el.dataset.k; v[k] = DATE_KEYS.includes(k) ? iso2be(el.value) : el.value.trim(); });
+  return v;
+}
+function nidOk(n) { const d = String(n).replace(/\D/g, ''); if (d.length !== 13) return false; let s = 0; for (let i = 0; i < 12; i++) s += +d[i] * (13 - i); return (11 - s % 11) % 10 === +d[12]; }
+function showEdit(p, key) {
+  const sec = SECTIONS[key];
+  const allowed = p.edit[sec.sec || key] || [];
+  const data = key === 'private' ? p.private : key === 'license' ? (p.license || {}) : p.basic;
+  const keys = sec.keys.filter(k => allowed.includes(k));
+  const locked = sec.keys.filter(k => !allowed.includes(k) && !(key === 'private' && p.level === 'clerk'));
+  const box = h('div', {}, keys.map(k => [h('label', { class: 'lb' }, LABEL[k] + (k === 'disease' ? ' (ไม่บังคับ)' : '')), input(k, data[k])]));
+  const backTo = () => p.basic.id === S.me.id ? showHome() : showPerson(p.basic.id);
+  render(back(backTo), h('div', { class: 'card' }, h('h2', {}, sec.title), box,
+    locked.length ? h('p', { class: 'sm muted' }, 'แก้ได้เฉพาะหัวหน้า/ผู้ดูแลระบบ: ' + locked.map(k => LABEL[k]).join(', ')) : null),
+    h('div', { class: 'savebar' }, act('บันทึก', 'btn-main', async () => {
+      const v = collect(box);
+      if (v.nid && !nidOk(v.nid)) throw new Error('เลขบัตรประชาชนไม่ถูกต้อง กรุณาตรวจอีกครั้ง');
+      if (v.phone && v.phone.replace(/\D/g, '').length !== 10 && v.phone.replace(/\D/g, '').length !== 9) throw new Error('เบอร์โทรควรมี 9–10 หลัก');
+      await api('save', { sid: p.basic.id, section: sec.sec || key, values: v });
+      toast('บันทึกแล้ว ✓'); backTo();
+    })));
+}
+function showRow(p, kind, r) {
+  const keys = kind === 'edu' ? ['level', 'year', 'course', 'school'] : ['from', 'to', 'place'];
+  const box = h('div', {}, keys.map(k => [h('label', { class: 'lb' }, LABEL[k] + (k === 'to' ? ' (เว้นว่าง = ปัจจุบัน)' : '')), input(k, r ? r[k] : '')]));
+  const backTo = () => p.basic.id === S.me.id ? showHome() : showPerson(p.basic.id);
+  render(back(backTo), h('div', { class: 'card' }, h('h2', {}, (r ? 'แก้' : 'เพิ่ม') + (kind === 'edu' ? 'ประวัติการศึกษา' : 'ประวัติการทำงาน')), box,
+    r && h('div', { class: 'stack' }, act('ลบรายการนี้', 'btn-line', async () => {
+      if (!confirm('ลบรายการนี้?')) return;
+      await api('rowDelete', { sid: p.basic.id, kind, row: r.row }); toast('ลบแล้ว'); backTo();
+    }))),
+    h('div', { class: 'savebar' }, act('บันทึก', 'btn-main', async () => {
+      const v = collect(box);
+      if (kind === 'edu' && !v.level) throw new Error('กรุณาเลือกระดับ');
+      if (kind === 'work' && !v.place) throw new Error('กรุณากรอกหน่วยงาน');
+      await api('rowSave', { sid: p.basic.id, kind, row: r ? r.row : null, values: v });
+      toast('บันทึกแล้ว ✓'); backTo();
+    })));
+}
+
+// ---------- รายชื่อ ----------
+async function showDirectory(filter) {
+  loading('กำลังโหลดรายชื่อ...');
+  S.dir = await api('directory');
+  drawDirectory(filter || 'all', '');
+}
+function drawDirectory(filter, q) {
+  const d = S.dir, full = d.full;
+  const search = h('input', { class: 'field', placeholder: '🔍 ค้นหาชื่อ / ชื่อเล่น', value: q });
+  const listBox = h('div');
+  const draw = () => {
+    const s = search.value.trim();
+    let L = d.list.filter(x => !s || (x.name + ' ' + (x.nick || '')).includes(s));
+    if (full) {
+      if (filter === 'all') L = L.filter(x => x.status === 'ปฏิบัติงาน');
+      if (filter === 'unreg') L = L.filter(x => x.status === 'ปฏิบัติงาน' && !x.registered);
+      if (filter === 'miss') L = L.filter(x => x.status === 'ปฏิบัติงาน' && x.missing);
+      if (filter === 'left') L = L.filter(x => x.status !== 'ปฏิบัติงาน');
+    }
+    listBox.replaceChildren(...(L.length ? L.map(x => h('button', { class: 'person', onclick: () => showPerson(x.id) },
+      h('div', { class: 'av' }, initial(x.name)),
+      h('div', { class: 'grow' }, h('b', {}, x.name + (x.nick ? ' (' + x.nick + ')' : '')),
+        h('div', { class: 'sm muted' }, full ? [x.pos,
+          h('span', { class: 'pill ' + (x.registered ? 'p-ok' : 'p-mute') }, x.registered ? 'LINE ✓' : 'ยังไม่ลงทะเบียน'),
+          x.missing ? h('span', { class: 'pill p-warn' }, 'ขาด ' + x.missing + ' ช่อง') : null,
+          x.licExp && daysTo(x.licExp) < 180 ? h('span', { class: 'pill p-bad' }, 'ใบอนุญาตใกล้หมด') : null] : (x.phone || ''))),
+      !full && x.phone ? h('a', { href: 'tel:' + x.phone.replace(/[^\d+]/g, ''), onclick: e => e.stopPropagation() }, '📞') : null))
+      : [h('p', { class: 'muted', style: 'text-align:center' }, 'ไม่พบรายชื่อ')]));
+  };
+  search.addEventListener('input', draw);
+  const active = d.list.filter(x => x.status !== undefined ? x.status === 'ปฏิบัติงาน' : true);
+  const seg = full ? h('div', { class: 'seg' }, [['all', 'ทั้งหมด'], ['unreg', 'ยังไม่ลงทะเบียน'], ['miss', 'ข้อมูลไม่ครบ'], ['left', 'ย้าย/ออก']].map(([k, t]) =>
+    h('button', { class: filter === k ? 'on' : '', onclick: () => drawDirectory(k, search.value) }, t))) : null;
+  const summary = full ? h('p', { class: 'sm muted' }, 'ปฏิบัติงาน ' + active.length + ' คน · ลงทะเบียนแล้ว ' + active.filter(x => x.registered).length +
+    ' · ข้อมูลไม่ครบ ' + active.filter(x => x.missing).length) : null;
+  render(back(), h('h2', {}, full ? 'รายชื่อบุคลากร' : 'สมุดโทรศัพท์หน่วย'), seg, summary, search, h('div', { style: 'margin-top:12px' }, listBox));
+  draw();
+}
+async function showPerson(sid) {
+  if (sid === S.me.id) return showHome();
+  loading();
+  const p = await api('profile', { sid });
+  render(back(() => S.dir ? drawDirectory('all', '') : showHome(), 'รายชื่อ'), profileView(p, false));
+}
+
+// ---------- เพิ่มบุคลากร (หัวหน้า / ธุรการ / ผู้ดูแลระบบ) ----------
+function showAdd() {
+  const keys = ['pre', 'fn', 'ln', 'nick', 'pos', 'emp', 'phone', 'nid', 'start', 'unit_date'];
+  const box = h('div', {}, keys.map(k => [h('label', { class: 'lb' }, LABEL[k] + (['fn', 'ln', 'pos'].includes(k) ? ' *' : '')), input(k, k === 'pre' ? 'นางสาว' : k === 'pos' ? 'พยาบาลวิชาชีพ' : '')]));
+  render(back(), h('div', { class: 'card' }, h('h2', {}, '➕ เพิ่มบุคลากรใหม่'),
+    h('p', { class: 'sm muted' }, 'กรอกเท่าที่รู้ เจ้าตัวจะเติมส่วนที่เหลือเองหลังลงทะเบียน · ถ้ายังไม่มีเลขบัตร ให้บอก "รหัสสำรอง" ในแท็บ ตั้งค่า กับเจ้าตัวแทน'), box),
+    h('div', { class: 'savebar' }, act('เพิ่มบุคลากร', 'btn-main', async () => {
+      const v = collect(box);
+      if (!v.fn || !v.ln) throw new Error('กรุณากรอกชื่อและนามสกุล');
+      if (v.nid && !nidOk(v.nid)) throw new Error('เลขบัตรประชาชนไม่ถูกต้อง');
+      const r = await api('addStaff', { values: v });
+      toast('เพิ่ม ' + r.name + ' แล้ว (' + r.id + ') ให้เจ้าตัวลงทะเบียนผ่าน LINE ได้เลย', false, 4000);
+      showHome();
+    })));
+}
+
+main();
+</script>
+</body>
+</html>
