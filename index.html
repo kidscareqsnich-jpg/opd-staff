@@ -117,6 +117,8 @@ const OPT = {
   emp: ['', 'ข้าราชการ', 'พนักงานราชการ', 'พกส.', 'ลูกจ้างประจำ', 'ลูกจ้างชั่วคราว'],
   marital: ['', 'โสด', 'สมรส', 'หย่า', 'หม้าย'],
   status: ['ปฏิบัติงาน', 'ย้าย', 'ลาออก', 'เกษียณ'],
+  kind: ['', 'ภายใน', 'ภายนอก'],
+  plan: ['', 'ในแผน', 'นอกแผน'],
   level: ['ม.ต้น', 'ม.ปลาย', 'ปวช.', 'ปวส.', 'พยาบาลเทคนิค', 'หลักสูตรผู้ช่วยพยาบาล', 'ปริญญาตรี', 'ปริญญาโท', 'ปริญญาเอก', 'เฉพาะทาง', 'วุฒิบัตร', 'อื่น ๆ']
 };
 const LABEL = {
@@ -125,10 +127,11 @@ const LABEL = {
   start: 'วันเริ่มงาน', start_at: 'เริ่มงานที่ / ตำแหน่ง', appoint: 'วันบรรจุ', unit_date: 'วันเข้าหน่วย', status: 'สถานะ',
   nid: 'เลขบัตรประชาชน', addr_reg: 'ที่อยู่ตามทะเบียนบ้าน', addr_cur: 'ที่อยู่ปัจจุบัน', disease: 'โรคประจำตัว',
   lic_type: 'ประเภทใบอนุญาต', lic_no: 'เลขที่ใบอนุญาต', member: 'เลขสมาชิกสภา', lic_issue: 'วันออกใบอนุญาต', lic_exp: 'วันหมดอายุ',
+  date: 'วันที่อบรม', topic: 'เรื่องที่อบรม', org: 'ผู้จัด', kind: 'ภายใน / ภายนอก', plan: 'ในแผน / นอกแผน', cneu: 'หน่วยคะแนน CNEU', cost: 'ค่าใช้จ่าย (บาท)',
   level: 'ระดับ', year: 'ปีที่จบ (พ.ศ.)', course: 'หลักสูตร / สาขา', school: 'สถานศึกษา', from: 'ตั้งแต่', to: 'ถึง', place: 'หน่วยงาน / ตำแหน่ง'
 };
-const DATE_KEYS = ['dob', 'start', 'appoint', 'unit_date', 'lic_issue', 'lic_exp', 'from', 'to'];
-const LONG_KEYS = ['addr_reg', 'addr_cur', 'disease', 'start_at'];
+const DATE_KEYS = ['dob', 'start', 'appoint', 'unit_date', 'lic_issue', 'lic_exp', 'from', 'to', 'date'];
+const LONG_KEYS = ['addr_reg', 'addr_cur', 'disease', 'start_at', 'topic'];
 const SECTIONS = {
   basic: { title: '👤 ข้อมูลทั่วไป', keys: ['pre', 'fn', 'ln', 'nick', 'dob', 'marital', 'phone', 'email'] },
   work: { title: '🏥 ข้อมูลการทำงาน', sec: 'basic', keys: ['pos', 'lvl', 'emp', 'posno', 'empcode', 'start', 'start_at', 'appoint', 'unit_date', 'status'] },
@@ -331,19 +334,67 @@ function trainingCard(p) {
   let cycle = null;
   if (a && z) cycle = T.filter(t => { const d = beDate(t.date); return d && d >= a && d <= z; }).reduce((s, t) => s + num(t.cneu), 0);
   const years = Object.keys(byFy).sort((x, y) => String(y).localeCompare(String(x)));
+  const can = p.edit && p.edit.training;
   return h('div', { class: 'card' },
-    h('div', { class: 'sec-h' }, h('h3', {}, '📚 การอบรม'), h('span', { class: 'sm muted' }, T.length + ' รายการ')),
+    h('div', { class: 'sec-h' }, h('h3', {}, '📚 การอบรม'), can ? h('button', { class: 'edit', onclick: () => showTraining(p, null) }, '+ เพิ่ม') : h('span', { class: 'sm muted' }, T.length + ' รายการ')),
     p.needLicense && h('div', { class: 'lock', style: 'background:var(--sky);color:var(--blue-d)' }, cycle == null ? 'ใส่วันออก/วันหมดอายุใบอนุญาต แล้วระบบจะนับ CNEU ในรอบใบอนุญาตให้' : 'CNEU ในรอบใบอนุญาตปัจจุบัน: ' + cycle + ' / 50 หน่วย'),
     T.length ? years.map(fy => {
-      const L = byFy[fy], sum = L.reduce((s, t) => s + num(t.cneu), 0);
+      const L = byFy[fy].slice().sort((x, y) => (beDate(y.date) || 0) - (beDate(x.date) || 0)), sum = L.reduce((s, t) => s + num(t.cneu), 0);
       return [h('div', { class: 'grp-y' }, 'ปีงบ ' + fy + ' · ' + L.length + ' รายการ' + (sum ? ' · ' + sum + ' CNEU' : '')),
         L.map(t => h('div', { class: 'item' },
           h('div', { class: 'grow' }, h('b', {}, t.topic),
             h('div', { class: 'sm muted' }, [t.date ? thDate(t.date) : t.date_raw, t.org].filter(Boolean).join(' · ')),
-            (t.kind || t.plan) && h('div', {}, t.kind && h('span', { class: 'pill p-mute', style: 'margin-left:0' }, t.kind), t.plan && h('span', { class: 'pill p-mute' }, t.plan))),
-          h('div', { class: 'sm', style: 'white-space:nowrap;color:' + (num(t.cneu) ? 'var(--ok)' : 'var(--muted)') }, num(t.cneu) ? num(t.cneu) + ' CNEU' : '–')))];
+            (t.kind || t.plan || t.hasCert) && h('div', {}, t.kind && h('span', { class: 'pill p-mute', style: 'margin-left:0' }, t.kind), t.plan && h('span', { class: 'pill p-mute' }, t.plan),
+              t.hasCert && h('button', { class: 'pill p-ok', style: 'border:none', onclick: () => viewCert(p, t) }, '📎 เกียรติบัตร'))),
+          h('div', { style: 'text-align:right' },
+            h('div', { class: 'sm', style: 'white-space:nowrap;color:' + (num(t.cneu) ? 'var(--ok)' : 'var(--muted)') }, num(t.cneu) ? num(t.cneu) + ' CNEU' : '–'),
+            can && t.row && h('button', { class: 'mini', style: 'margin-top:6px', onclick: () => showTraining(p, t) }, 'แก้'))))];
     }) : h('div', { class: 'sm muted' }, 'ยังไม่มีข้อมูลการอบรม'),
-    h('p', { class: 'sm muted', style: 'margin:10px 0 0' }, 'ข้อมูลจากไฟล์ Excel เดิม (ปีงบ 66–70) · การลงรายการใหม่และแนบเกียรติบัตรจะเปิดให้ใช้เร็ว ๆ นี้'));
+    can && h('p', { class: 'sm muted', style: 'margin:10px 0 0' }, 'อบรมเสร็จแล้วกด "+ เพิ่ม" ได้เลย แนบรูปเกียรติบัตรไว้ด้วยจะดีมาก'));
+}
+async function fileToPayload(f) {
+  if (!f) return null;
+  if (f.type === 'application/pdf') {
+    if (f.size > 4 * 1024 * 1024) throw new Error('ไฟล์ PDF ใหญ่เกิน 4 MB');
+    const buf = new Uint8Array(await f.arrayBuffer()); let s = ''; for (let i = 0; i < buf.length; i += 32768) s += String.fromCharCode.apply(null, buf.subarray(i, i + 32768));
+    return { mime: 'application/pdf', data: btoa(s) };
+  }
+  if (!/^image\//.test(f.type)) throw new Error('แนบได้เฉพาะรูปภาพหรือ PDF');
+  const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => bad(new Error('เปิดรูปไม่ได้')); i.src = URL.createObjectURL(f); });
+  const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return { mime: 'image/jpeg', data: c.toDataURL('image/jpeg', 0.82).split(',')[1] };
+}
+function showTraining(p, t) {
+  const keys = ['date', 'topic', 'org', 'place', 'kind'].concat(p.edit.plan ? ['plan'] : []).concat(['cneu', 'cost']);
+  const box = h('div', {}, keys.map(k => [h('label', { class: 'lb' }, (k === 'place' ? 'สถานที่' : LABEL[k]) + (['date', 'topic'].includes(k) ? ' *' : '')), input(k, t ? t[k] : (k === 'kind' ? 'ภายนอก' : ''))]));
+  const cn = box.querySelector('[data-k=cneu]'); cn.setAttribute('inputmode', 'decimal'); cn.setAttribute('placeholder', 'ดูในเกียรติบัตร เช่น 6.5');
+  const file = h('input', { type: 'file', accept: 'image/*,application/pdf', class: 'field' });
+  const backTo = () => p.basic.id === S.me.id ? showHome() : showPerson(p.basic.id);
+  render(back(backTo), h('div', { class: 'card' }, h('h2', {}, (t ? 'แก้' : 'เพิ่ม') + 'การอบรม'), box,
+      h('label', { class: 'lb' }, 'รูปเกียรติบัตร / หนังสืออนุมัติ' + (t && t.hasCert ? ' (มีแล้ว — เลือกใหม่ถ้าจะเปลี่ยน)' : ' (ถ้ามี)')), file,
+      t && h('div', { class: 'stack' }, act('ลบรายการนี้', 'btn-line', async () => {
+        if (!confirm('ลบรายการอบรม "' + t.topic + '" ?')) return;
+        await api('trDelete', { sid: p.basic.id, row: t.row }); toast('ลบแล้ว'); backTo();
+      }))),
+    h('div', { class: 'savebar' }, act('บันทึก', 'btn-main', async () => {
+      const v = collect(box);
+      if (!v.date) throw new Error('กรุณาเลือกวันที่อบรม');
+      if (!v.topic) throw new Error('กรุณากรอกเรื่องที่อบรม');
+      if (v.cneu && !(Number(v.cneu) >= 0 && Number(v.cneu) <= 100)) throw new Error('หน่วย CNEU ใส่เป็นตัวเลข เช่น 6.5');
+      const f = await fileToPayload(file.files[0]);
+      toast(f ? 'กำลังอัปโหลดเกียรติบัตร...' : 'กำลังบันทึก...', false, 8000);
+      await api('trSave', { sid: p.basic.id, row: t ? t.row : null, values: v, file: f });
+      toast('บันทึกแล้ว ✓'); backTo();
+    })));
+}
+async function viewCert(p, t) {
+  toast('กำลังเปิดเกียรติบัตร...', false, 6000);
+  const r = await api('trCert', { sid: p.basic.id, row: t.row }).catch(e => { toast(e.message, true, 4000); return null; });
+  if (!r) return;
+  const url = URL.createObjectURL(new Blob([Uint8Array.from(atob(r.data), c => c.charCodeAt(0))], { type: r.mime }));
+  if (r.mime === 'application/pdf') { location.href = url; return; }
+  render(back(() => p.basic.id === S.me.id ? showHome() : showPerson(p.basic.id)), h('div', { class: 'card' }, h('h3', {}, t.topic), h('img', { src: url, style: 'width:100%;border-radius:12px;margin-top:10px' })));
 }
 function listCard(p, kind, title, line) {
   const rows = p[kind] || [];
