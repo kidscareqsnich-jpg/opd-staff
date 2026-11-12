@@ -88,6 +88,7 @@
   .seg { display:flex; background:#fff; border-radius:14px; padding:4px; box-shadow:var(--shadow); margin-bottom:12px; }
   .seg button { flex:1; border:none; background:none; border-radius:11px; padding:8px; font-size:14px; color:var(--muted); }
   .seg button.on { background:var(--sky); color:var(--blue-d); font-weight:600; }
+  .grp-y { font-size:13px; font-weight:600; color:var(--pink-d); margin:14px 0 2px; }
 </style>
 </head>
 <body>
@@ -314,11 +315,35 @@ function profileView(p, mine) {
   }
   out.push(listCard(p, 'edu', '🎓 ประวัติการศึกษา', r => [h('b', {}, r.level + (r.year ? ' · ' + r.year : '')), h('div', { class: 'sm muted' }, [r.course, r.school].filter(Boolean).join(' · '))]));
   out.push(listCard(p, 'work', '🗂️ ประวัติการทำงาน', r => [h('b', {}, r.place || '-'), h('div', { class: 'sm muted' }, (r.from ? thDate(r.from) : '?') + ' – ' + (r.to ? thDate(r.to) : 'ปัจจุบัน'))]));
+  if (p.training) out.push(trainingCard(p));
   if (!mine && S.me.isBoss && p.registered) out.push(h('div', { class: 'stack' }, act('ยกเลิกการผูก LINE (ให้ลงทะเบียนใหม่)', 'btn-line', async () => {
     if (!confirm('ยกเลิกการผูก LINE ของ ' + name + ' ?\nใช้เมื่อเปลี่ยนเครื่อง/บัญชี LINE หรือมีคนลงทะเบียนผิดชื่อ')) return;
     await api('resetLine', { sid: b.id }); toast('ยกเลิกแล้ว ให้เจ้าตัวลงทะเบียนใหม่'); showPerson(b.id);
   })));
   return out;
+}
+function trainingCard(p) {
+  const T = p.training || [];
+  const num = v => Number(String(v || '').replace(/[^\d.]/g, '')) || 0;
+  const byFy = {};
+  T.forEach(t => { const k = t.fy || '-'; (byFy[k] = byFy[k] || []).push(t); });
+  const lic = p.license || {}, a = beDate(lic.lic_issue), z = beDate(lic.lic_exp);
+  let cycle = null;
+  if (a && z) cycle = T.filter(t => { const d = beDate(t.date); return d && d >= a && d <= z; }).reduce((s, t) => s + num(t.cneu), 0);
+  const years = Object.keys(byFy).sort((x, y) => String(y).localeCompare(String(x)));
+  return h('div', { class: 'card' },
+    h('div', { class: 'sec-h' }, h('h3', {}, '📚 การอบรม'), h('span', { class: 'sm muted' }, T.length + ' รายการ')),
+    p.needLicense && h('div', { class: 'lock', style: 'background:var(--sky);color:var(--blue-d)' }, cycle == null ? 'ใส่วันออก/วันหมดอายุใบอนุญาต แล้วระบบจะนับ CNEU ในรอบใบอนุญาตให้' : 'CNEU ในรอบใบอนุญาตปัจจุบัน: ' + cycle + ' / 50 หน่วย'),
+    T.length ? years.map(fy => {
+      const L = byFy[fy], sum = L.reduce((s, t) => s + num(t.cneu), 0);
+      return [h('div', { class: 'grp-y' }, 'ปีงบ ' + fy + ' · ' + L.length + ' รายการ' + (sum ? ' · ' + sum + ' CNEU' : '')),
+        L.map(t => h('div', { class: 'item' },
+          h('div', { class: 'grow' }, h('b', {}, t.topic),
+            h('div', { class: 'sm muted' }, [t.date ? thDate(t.date) : t.date_raw, t.org].filter(Boolean).join(' · ')),
+            (t.kind || t.plan) && h('div', {}, t.kind && h('span', { class: 'pill p-mute', style: 'margin-left:0' }, t.kind), t.plan && h('span', { class: 'pill p-mute' }, t.plan))),
+          h('div', { class: 'sm', style: 'white-space:nowrap;color:' + (num(t.cneu) ? 'var(--ok)' : 'var(--muted)') }, num(t.cneu) ? num(t.cneu) + ' CNEU' : '–')))];
+    }) : h('div', { class: 'sm muted' }, 'ยังไม่มีข้อมูลการอบรม'),
+    h('p', { class: 'sm muted', style: 'margin:10px 0 0' }, 'ข้อมูลจากไฟล์ Excel เดิม (ปีงบ 66–70) · การลงรายการใหม่และแนบเกียรติบัตรจะเปิดให้ใช้เร็ว ๆ นี้'));
 }
 function listCard(p, kind, title, line) {
   const rows = p[kind] || [];
